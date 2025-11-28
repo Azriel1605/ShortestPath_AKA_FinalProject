@@ -5,6 +5,7 @@ import random
 import time
 import os
 import sys
+import heapq  # Import library heapq bawaan untuk performa maksimal
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -15,57 +16,8 @@ app = Flask(__name__)
 frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
 CORS(app, origins=[frontend_url], supports_credentials=True)
 
-# Increase recursion limit for large graphs
+# Increase recursion limit for large graphs (penting untuk Bellman-Ford rekursif)
 sys.setrecursionlimit(100000)
-
-
-class MinHeap:
-    def __init__(self):
-        self.data = []  # array heap
-
-    def push(self, item):  # item = (distance, node)
-        self.data.append(item)
-        self._heapify_up(len(self.data) - 1)
-
-    def pop(self):
-        if not self.data:
-            return None
-        self._swap(0, len(self.data) - 1)
-        item = self.data.pop()
-        self._heapify_down(0)
-        return item
-
-    def _heapify_up(self, idx):
-        parent = (idx - 1) // 2
-        while idx > 0 and self.data[idx][0] < self.data[parent][0]:
-            self._swap(idx, parent)
-            idx = parent
-            parent = (idx - 1) // 2
-
-    def _heapify_down(self, idx):
-        n = len(self.data)
-        while True:
-            left = 2 * idx + 1
-            right = 2 * idx + 2
-            smallest = idx
-
-            if left < n and self.data[left][0] < self.data[smallest][0]:
-                smallest = left
-            if right < n and self.data[right][0] < self.data[smallest][0]:
-                smallest = right
-
-            if smallest == idx:
-                break
-
-            self._swap(idx, smallest)
-            idx = smallest
-
-    def _swap(self, i, j):
-        self.data[i], self.data[j] = self.data[j], self.data[i]
-
-    def __len__(self):
-        return len(self.data)
-
 
 def generate_random_graph(num_nodes: int) -> Tuple[List[List[Tuple[int, int]]], List[Tuple[int, int, int]]]:
     """Generate a random directed graph with weighted edges using index-based representation"""
@@ -94,10 +46,10 @@ def generate_random_graph(num_nodes: int) -> Tuple[List[List[Tuple[int, int]]], 
     
     return graph, edges_list
 
-
-def dijkstra_manual_heap(n: int, graph: List[List[Tuple[int, int]]], start: int) -> Tuple[List[float], List[Optional[int]], float]:
+def dijkstra_optimized(n: int, graph: List[List[Tuple[int, int]]], start: int) -> Tuple[List[float], List[Optional[int]], float]:
     """
-    Dijkstra's algorithm using manual MinHeap - O(V x E)
+    Dijkstra's algorithm using Python's native heapq (C implementation) 
+    Time Complexity: O(E log V)
     """
     start_time = time.perf_counter()
     
@@ -106,12 +58,14 @@ def dijkstra_manual_heap(n: int, graph: List[List[Tuple[int, int]]], start: int)
     prev = [None] * n
     dist[start] = 0
     
-    heap = MinHeap()
-    heap.push((0, start))  # (distance, node)
+    # Priority Queue: menyimpan tuple (distance, node)
+    # heapq di Python adalah Min-Heap secara default
+    pq = [(0, start)]
     
-    while len(heap) > 0:
-        cur_dist, u = heap.pop()
+    while pq:
+        cur_dist, u = heapq.heappop(pq)
         
+        # Jika jarak yang diambil dari heap lebih besar dari jarak tersimpan, skip (lazy deletion)
         if cur_dist > dist[u]:
             continue
         
@@ -119,15 +73,14 @@ def dijkstra_manual_heap(n: int, graph: List[List[Tuple[int, int]]], start: int)
             if dist[u] + w < dist[v]:
                 dist[v] = dist[u] + w
                 prev[v] = u
-                heap.push((dist[v], v))
+                heapq.heappush(pq, (dist[v], v))
     
     execution_time = time.perf_counter() - start_time
     return dist, prev, execution_time
 
-
 def bellman_ford_recursive(n: int, edges: List[Tuple[int, int, int]], start: int) -> Tuple[List[float], List[Optional[int]], float]:
     """
-    Bellman-Ford recursive implementation - O(V^2)
+    Bellman-Ford recursive implementation - O(VE) worst case
     """
     start_time = time.perf_counter()
     
@@ -137,27 +90,32 @@ def bellman_ford_recursive(n: int, edges: List[Tuple[int, int, int]], start: int
     dist[start] = 0
     
     def relax(iteration):
+        # Base case: berhenti jika sudah V-1 iterasi
         if iteration == n - 1:
             return
+        
         changed = False
         for u, v, w in edges:
-            if dist[u] != INF and dist[u] + w < dist[v]:
-                dist[v] = dist[u] + w
+            ifSX_dist = dist[u]
+            if ifSX_dist !=HZ_inf_const and ifSX_dist + w < dist[v]:
+                dist[v] = ifSX_dist + w
                 prev[v] = u
                 changed = True
+        
+        # Optimization: Jika tidak ada perubahan dalam satu iterasi, berhenti lebih awal
         if changed:
             relax(iteration + 1)
     
+    # Definisi konstanta lokal untuk optimasi akses variabel
+    HZ_inf_const = float('inf')
     relax(0)
     
     execution_time = time.perf_counter() - start_time
     return dist, prev, execution_time
 
-
 @app.route("/")
 def root():
-    return jsonify({"message": "Graph Algorithm Comparison API (Flask)", "status": "running"})
-
+    return jsonify({"message": "Graph Algorithm Comparison API (Flask Optimized)", "status": "running"})
 
 @app.route("/api/compare", methods=["POST"])
 def compare_algorithms():
@@ -177,8 +135,8 @@ def compare_algorithms():
     # Generate random graph
     graph, edges_list = generate_random_graph(num_nodes)
     
-    # Run Dijkstra's algorithm with manual heap
-    dijkstra_dist, dijkstra_prev, dijkstra_time = dijkstra_manual_heap(num_nodes, graph, start_node)
+    # Run Dijkstra's algorithm (Optimized)
+    dijkstra_dist, dijkstra_prev, dijkstra_time = dijkstra_optimized(num_nodes, graph, start_node)
     
     # Run Bellman-Ford recursive algorithm
     bf_dist, bf_prev, bf_time = bellman_ford_recursive(num_nodes, edges_list, start_node)
@@ -224,7 +182,6 @@ def compare_algorithms():
         "edges": edges
     })
 
-
 @app.route("/api/benchmark", methods=["POST"])
 def run_benchmark():
     """Run benchmark for specified max_nodes"""
@@ -251,8 +208,8 @@ def run_benchmark():
         graph, edges_list = generate_random_graph(num_nodes)
         start_node = 0
         
-        # Run algorithms
-        _, _, d_time = dijkstra_manual_heap(num_nodes, graph, start_node)
+        # Run algorithms (Updated to use optimized Dijkstra)
+        _, _, d_time = dijkstra_optimized(num_nodes, graph, start_node)
         _, _, bf_time = bellman_ford_recursive(num_nodes, edges_list, start_node)
         
         results.append({
@@ -262,7 +219,6 @@ def run_benchmark():
         })
     
     return jsonify({"results": results})
-
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
