@@ -121,8 +121,10 @@ def bellman_ford_recursive( n: int, edges: List[Tuple[int, int, int]], start: in
     dist[start] = 0 # Jarak node awal ke node awal pasti 0
 
     def recursive(iteration: int): # Maksimal recursive dipanggil adalah V-1 O(V)
+        # Akan berhenti ketika tidak terdapat rute baru dari iterasi
+        # Atau rekursif mencapai V-1
         # Base case: Berhenti ketika  V - 1 iterasi
-        if iteration == n - 1:
+        if iteration == n - 1: # Jika semua telah di cek
             return
 
         updated = False
@@ -130,7 +132,7 @@ def bellman_ford_recursive( n: int, edges: List[Tuple[int, int, int]], start: in
             if dist[u] != INF and dist[u] + w < dist[v]: # Jika terdapat rute lebih kecil
                 dist[v] = dist[u] + w
                 prev[v] = u
-                updated = True
+                updated = True # terdapat Setidaknya 1 rute baru
 
         # Recursive call only if something changed
         if updated:
@@ -139,6 +141,7 @@ def bellman_ford_recursive( n: int, edges: List[Tuple[int, int, int]], start: in
     recursive(0)
     
     ## Time Complexity
+    # V + V + (V-1) * E
     # (V - 1) * E
     # O(V * E)
 
