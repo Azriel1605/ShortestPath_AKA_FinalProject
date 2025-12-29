@@ -148,6 +148,40 @@ def bellman_ford_recursive( n: int, edges: List[Tuple[int, int, int]], start: in
     execution_time = time.perf_counter() - start_time
     return dist, prev, execution_time
 
+def bellman_ford_iterative(
+    n: int,
+    edges: List[Tuple[int, int, int]],
+    start: int
+) -> Tuple[List[float], List[Optional[int]], float]:
+    """
+    Bellman-Ford iterative implementation
+    Time Complexity: O(VE)
+    """
+
+    start_time = time.perf_counter()
+
+    INF = float('inf')
+    dist = [INF] * n           # O(V)
+    prev = [None] * n          # O(V)
+    dist[start] = 0
+
+    # Relaksasi edge sebanyak V-1 kali
+    for iteration in range(n - 1):   # O(V)
+        updated = False
+
+        for u, v, w in edges:        # O(E)
+            if dist[u] != INF and dist[u] + w < dist[v]:
+                dist[v] = dist[u] + w
+                prev[v] = u
+                updated = True
+
+        # Early stopping: jika tidak ada perubahan
+        if not updated:
+            break
+
+    execution_time = time.perf_counter() - start_time
+    return dist, prev, execution_time
+
 
 @app.route("/")
 def root():
@@ -175,8 +209,9 @@ def compare_algorithms():
     # Menjalankan Algoritma Dijkstra
     dijkstra_dist, dijkstra_prev, dijkstra_time = dijkstra_heapq(num_nodes, graph, start_node)
     
-    # Menjalankan Algoritma Bellman-Ford secara recursive
+    # Menjalankan Algoritma Bellman-Ford
     bf_dist, bf_prev, bf_time = bellman_ford_recursive(num_nodes, edges_list, start_node)
+    bfi_dist, bfi_prev, bfi_time = bellman_ford_iterative(num_nodes, edges_list, start_node)
     
     # Mengembalikan nilai node dengan awalan V
     nodes = [f"V{i}" for i in range(num_nodes)]
@@ -199,6 +234,15 @@ def compare_algorithms():
         for i in range(num_nodes)
     ]
     
+    bfi_results = [
+        {
+            "node": f"V{i}",
+            "distance": bfi_dist[i] if bfi_dist[i] != float('inf') else -1,
+            "previous": f"V{bfi_prev[i]}" if bfi_prev[i] is not None else None
+        }
+        for i in range(num_nodes)
+    ]
+    
     # Format edges untuk visualisasi
     edges = [
         {"source": f"V{u}", "target": f"V{v}", "weight": w}
@@ -214,6 +258,7 @@ def compare_algorithms():
     return jsonify({
         "dijkstra": {"results": dijkstra_results, "execution_time": dijkstra_time * 1000},
         "bellman_ford": {"results": bf_results, "execution_time": bf_time * 1000},
+        "bellman_ford_iterative": {"results": bfi_results, "execution_time": bfi_time * 1000},
         "graph": graph_dict,
         "nodes": nodes,
         "edges": edges
@@ -249,11 +294,13 @@ def run_benchmark():
         # Run algorithms
         _, _, d_time = dijkstra_heapq(num_nodes, graph, start_node)
         _, _, bf_time = bellman_ford_recursive(num_nodes, edges_list, start_node)
+        _, _, bfi_time = bellman_ford_iterative(num_nodes, edges_list, start_node)
         
         results.append({
             "num_nodes": num_nodes,
             "dijkstra_time": d_time * 1000,
-            "bellman_ford_time": bf_time * 1000
+            "bellman_ford_time": bf_time * 1000,
+            "bellman_ford_iterative_time": bfi_time * 1000
         })
     
     return jsonify({"results": results})

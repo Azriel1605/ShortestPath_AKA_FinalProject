@@ -186,12 +186,12 @@ export default function HomePage() {
         {result && (
           <div className="space-y-4 sm:space-y-6">
             {/* Execution Time Cards - Better mobile layout */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               <Card className="border-blue-500/30 bg-gradient-to-br from-blue-500/10 to-blue-600/20">
                 <CardContent className="p-4 sm:p-5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-xs sm:text-sm text-slate-300 font-medium">Dijkstra (Manual Heap)</p>
+                      <p className="text-xs sm:text-sm text-slate-300 font-medium">Dijkstra</p>
                       <p className="text-xl sm:text-3xl font-bold text-blue-400 mt-1">
                         {result.dijkstra.execution_time.toFixed(4)}{" "}
                         <span className="text-sm sm:text-lg font-normal">ms</span>
@@ -199,6 +199,22 @@ export default function HomePage() {
                     </div>
                     <div className="p-2 sm:p-3 rounded-xl bg-blue-500/30">
                       <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-cyan-600/20">
+                <CardContent className="p-4 sm:p-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs sm:text-sm text-slate-300 font-medium">Bellman-Ford (Iteratif)</p>
+                      <p className="text-xl sm:text-3xl font-bold text-cyan-400 mt-1">
+                        {result.bellman_ford_iterative.execution_time.toFixed(4)}{" "}
+                        <span className="text-sm sm:text-lg font-normal">ms</span>
+                      </p>
+                    </div>
+                    <div className="p-2 sm:p-3 rounded-xl bg-cyan-500/30">
+                      <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-400" />
                     </div>
                   </div>
                 </CardContent>
@@ -229,8 +245,9 @@ export default function HomePage() {
             />
 
             {/* Results Tables - Stack on mobile */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
-              <ResultsTable title="Dijkstra (Manual Heap)" result={result.dijkstra} variant="primary" />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+              <ResultsTable title="Dijkstra" result={result.dijkstra} variant="primary" />
+              <ResultsTable title="Bellman-Ford (Iteratif)" result={result.bellman_ford_iterative} variant="accent" />
               <ResultsTable title="Bellman-Ford (Rekursif)" result={result.bellman_ford} variant="accent" />
             </div>
           </div>
@@ -300,6 +317,14 @@ export default function HomePage() {
                       dataKey="bellman_ford_time"
                       name="Bellman-Ford"
                       stroke="#22d3d1"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="bellman_ford_iterative_time"
+                      name="Bellman-Ford (Iteratif)"
+                      stroke="#06b6d4"
                       strokeWidth={2}
                       dot={false}
                     />

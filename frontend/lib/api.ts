@@ -20,6 +20,7 @@ export interface Edge {
 export interface ComparisonResponse {
   dijkstra: AlgorithmResult
   bellman_ford: AlgorithmResult
+  bellman_ford_iterative: AlgorithmResult
   graph: Record<string, [string, number][]>
   nodes: string[]
   edges: Edge[]
@@ -29,6 +30,7 @@ export interface BenchmarkResult {
   num_nodes: number
   dijkstra_time: number
   bellman_ford_time: number
+  bellman_ford_iterative_time: number
 }
 
 export interface BenchmarkResponse {
